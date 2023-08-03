@@ -1,6 +1,7 @@
 name: Build releases
 
 on:
+  workflow_dispatch:
   watch:
     types: started
 
@@ -17,8 +18,6 @@ jobs:
       fail-fast: false
       matrix:
         model:
-          - nanopi-r4s
-          - nanopi-r5s
           - x86_64
         tag:
           - type: rc2
@@ -91,21 +90,7 @@ jobs:
     - name: Prepare Firmware Files
       run: |
         mkdir -p rom info
-        if [ "${{ matrix.model }}" = "nanopi-r4s" ]; then
-          cp -a openwrt/bin/targets/rockchip/*/*.img.gz rom/
-          cp -a openwrt/bin/targets/rockchip/*/*-r4s.manifest info/manifest.txt
-          cp -a openwrt/bin/targets/rockchip/*/config.buildinfo info/config.buildinfo
-          cp -a openwrt/bin/targets/rockchip/*/openwrt-sdk-*.tar.xz rom/
-          rename 's/openwrt-sdk-/nanopi-r4s-openwrt-sdk-/' rom/openwrt-sdk-*
-          cd rom && sha256sum * > ../info/sha256sums.txt
-        elif [ "${{ matrix.model }}" = "nanopi-r5s" ]; then
-          cp -a openwrt/bin/targets/rockchip/*/*.img.gz rom/
-          cp -a openwrt/bin/targets/rockchip/*/*.manifest info/manifest.txt
-          cp -a openwrt/bin/targets/rockchip/*/config.buildinfo info/config.buildinfo
-          cp -a openwrt/bin/targets/rockchip/*/openwrt-sdk-*.tar.xz rom/
-          rename 's/openwrt-sdk-/nanopi-r5s-openwrt-sdk-/' rom/openwrt-sdk-*
-          cd rom && sha256sum * > ../info/sha256sums.txt
-        elif [ "${{ matrix.model }}" = "x86_64" ]; then
+        if [ "${{ matrix.model }}" = "x86_64" ]; then
           cp -a openwrt/bin/targets/x86/*/*-ext4-combined-efi.img.gz rom/
           cp -a openwrt/bin/targets/x86/*/*-squashfs-combined-efi.img.gz rom/
           cp -a openwrt/bin/targets/x86/*/*-generic-rootfs.tar.gz rom/
@@ -175,11 +160,7 @@ jobs:
 
     - name: Install aliyunpan & login
       run: |
-        if [ "${{ matrix.model }}" = "nanopi-r4s" ]; then
-          device_id=${{ secrets.device_id_r4s }}
-        elif [ "${{ matrix.model }}" = "nanopi-r5s" ]; then
-          device_id=${{ secrets.device_id_r5s }}
-        elif [ "${{ matrix.model }}" = "x86_64" ]; then
+        if [ "${{ matrix.model }}" = "x86_64" ]; then
           device_id=${{ secrets.device_id_x86 }}
         fi
         sudo curl -L ${{ secrets.aliyunpan_go }} -o /bin/aliyunpan --progress-bar
@@ -201,23 +182,7 @@ jobs:
       run: |
         export ALIYUNPAN_CONFIG_DIR="$(pwd)/.aliyunpan"
         version=$(cat openwrt/version.txt)
-        if [ "${{ matrix.model }}" = "nanopi-r4s" ]; then
-          aliyunpan upload -ow info/manifest.txt openwrt/nanopi-r4s/releases/${{ matrix.tag.version }}/$version/
-          aliyunpan upload -ow info/config.buildinfo openwrt/nanopi-r4s/releases/${{ matrix.tag.version }}/$version/
-          aliyunpan upload -ow info/sha256sums.txt openwrt/nanopi-r4s/releases/${{ matrix.tag.version }}/$version/
-          aliyunpan upload -ow rom/nanopi-*.tar.xz openwrt/nanopi-r4s/releases/${{ matrix.tag.version }}/$version/
-          aliyunpan upload -ow rom/*-r4s-ext4-sysupgrade.img.gz openwrt/nanopi-r4s/releases/${{ matrix.tag.version }}/$version/
-          aliyunpan upload -ow rom/*-r4s-squashfs-sysupgrade.img.gz openwrt/nanopi-r4s/releases/${{ matrix.tag.version }}/$version/
-        elif [ "${{ matrix.model }}" = "nanopi-r5s" ]; then
-          aliyunpan upload -ow info/manifest.txt openwrt/nanopi-r5s/releases/${{ matrix.tag.version }}/$version/
-          aliyunpan upload -ow info/config.buildinfo openwrt/nanopi-r5s/releases/${{ matrix.tag.version }}/$version/
-          aliyunpan upload -ow info/sha256sums.txt openwrt/nanopi-r5s/releases/${{ matrix.tag.version }}/$version/
-          aliyunpan upload -ow rom/nanopi-*.tar.xz openwrt/nanopi-r5s/releases/${{ matrix.tag.version }}/$version/
-          aliyunpan upload -ow rom/*-r5c-ext4-sysupgrade.img.gz openwrt/nanopi-r5s/releases/${{ matrix.tag.version }}/$version/
-          aliyunpan upload -ow rom/*-r5c-squashfs-sysupgrade.img.gz openwrt/nanopi-r5s/releases/${{ matrix.tag.version }}/$version/
-          aliyunpan upload -ow rom/*-r5s-ext4-sysupgrade.img.gz openwrt/nanopi-r5s/releases/${{ matrix.tag.version }}/$version/
-          aliyunpan upload -ow rom/*-r5s-squashfs-sysupgrade.img.gz openwrt/nanopi-r5s/releases/${{ matrix.tag.version }}/$version/
-        elif [ "${{ matrix.model }}" = "x86_64" ]; then
+        if [ "${{ matrix.model }}" = "x86_64" ]; then
           aliyunpan upload -ow info/manifest.txt openwrt/x86_64/releases/${{ matrix.tag.version }}/$version/
           aliyunpan upload -ow info/config.buildinfo openwrt/x86_64/releases/${{ matrix.tag.version }}/$version/
           aliyunpan upload -ow info/sha256sums.txt openwrt/x86_64/releases/${{ matrix.tag.version }}/$version/
